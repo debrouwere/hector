@@ -1,0 +1,35 @@
+{
+  "name": "hector",
+  "version": "0.0.1",
+  "description": "A static-site generator that works like an MVC framework (routes and data sources).",
+  "main": "lib/index.js",
+  "bin": "./bin/hector",
+  "directories": {
+    "example": "examples",
+    "test": "test"
+  },
+  "dependencies": {
+    "async": "0.2.x",
+    "commander": "1.x",
+    "espy": "0.x",
+    "glob": "3.x",
+    "js-yaml": "1.x",
+    "railgun": "0.x",
+    "tilt": "0.x",
+    "underscore": "1.x",
+    "wrench": "1.x",
+    "yaml": "0.x"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/stdbrouw/hector.git"
+  },
+  "author": "Stijn Debrouwere",
+  "license": "BSD",
+  "readmeFilename": "README.md",
+  "gitHead": "fae6c2d110736fd0c6851fe9eef5ed8dbd5a4b7a"
+}
