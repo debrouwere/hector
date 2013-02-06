@@ -29,7 +29,6 @@
     "url": "git://github.com/stdbrouw/hector.git"
   },
   "author": "Stijn Debrouwere",
-  "license": "BSD",
-  "readmeFilename": "README.md",
-  "gitHead": "fae6c2d110736fd0c6851fe9eef5ed8dbd5a4b7a"
+  "license": "MIT",
+  "readmeFilename": "README.md"
 }
