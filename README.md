@@ -1,0 +1,3 @@
+Hector is a static site generator, perfect for blogs and promotional websites.
+
+Because Hector is built on Tilt.js, you can use just about any template language and markup language you want. Here's a list of languages we currently support......

@@ -1,0 +1,20 @@
+defaults:
+    language: 'en'
+
+routes:
+    posts:
+        route: '{year}/{month}/{day}/{permalink}'
+        layout: '{layout}'
+        context: 'posts/{year}-{month}-{day}-{permalink}'
+        defaults:
+            layout: 'blogpost'
+    pages:
+        route: '{permalink}'
+        layout: '{layout}'
+        context: 'pages/{permalink}'
+        defaults:
+            layout: 'page'
+    feed:
+        route: 'feed.xml'
+        layout: 'feed'
+        context: 'posts/{year}/{month}-{day}-{permalink}'

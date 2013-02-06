@@ -1,0 +1,14 @@
+#!/usr/bin/env coffee
+
+program = require 'commander'
+hector = require '../src/index'
+
+program
+    .usage '<source> <destination> [options]'
+
+program
+    .option '-r, --routes [path]',
+        'provide a custom routing file', ''
+    .parse process.argv
+
+hector.build program.args..., program.routes
