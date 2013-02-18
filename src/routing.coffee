@@ -1,4 +1,4 @@
-context = require 'espy'
+espy = require 'espy'
 tilt = require 'tilt'
 railgun = require 'railgun'
 _ = require 'underscore'
@@ -24,7 +24,11 @@ class exports.Format
 
         regex = @raw.replace /\{([^\}]+)\}/g, '(.+?)'
         regex = new RegExp "#{regex}\.([^.]+)$"
-        matches = regex.exec(str)[1..]
+        
+        matchObj = regex.exec(str)
+        return null unless matchObj
+
+        matches = matchObj[1..]
         context = @defaults
         for key in keys
             context[key] = matches.shift()
@@ -61,9 +65,9 @@ class exports.Route
 
     getData: (callback) ->
         # TODO: should really be (errors, context) =>
-        context.findFilesFor @router.fileRoot, @root, (files) ->
-            context.getContext files, (errors, context) ->
-                callback context
+        espy.findFilesFor @router.fileRoot, @root, (files) ->
+            espy.getContext files, (errors, context) ->
+                callback errors, context
 
     findLayout: (templateName) ->
         path = fs.path.join @router.fileRoot, 'layouts', templateName
@@ -116,14 +120,20 @@ class exports.Route
                 bundle.push abspath, {content: output, compilerType: 'noop'}
                 done err
 
-        @getData (data) =>
+        @getData (err, data) =>
+            # render once for every context set
+            async.forEach (_.pairs data), gen, (err) ->
+                callback err, bundle
+            
+            ###
+            # I wonder whether this is relevant?
+            # Doesn't everything just work the same for individual files?
             if @route.isTemplate
-                # render once for every context set
-                async.forEach (_.pairs data), gen, (err) ->
-                    callback err, bundle
+                'see above'
             else
                 # render once
                 'todo'
+            ###
 
 class exports.Router
     constructor: (@routes, @defaults, @fileRoot) ->
@@ -132,4 +142,9 @@ class exports.Router
     generate: (callback) ->
         bundle = new railgun.Bundle @fileRoot + 'index'
         console.log 'root', bundle.root
-        @routes.posts.generate bundle, callback
+
+        # TEMPORARY -- I don't want to test all routes just yet, 
+        # so I'm picking them manually
+        @routes.posts.generate bundle, =>
+            @routes.pages.generate bundle, =>
+                callback null, bundle

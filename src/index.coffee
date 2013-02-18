@@ -5,7 +5,7 @@ _ = require 'underscore'
 fs = require 'fs'
 fs.path = require 'path'
 yaml = require 'js-yaml'
-routing = require './routing'
+routing = exports.routing = require './routing'
 
 exports.build = (paths..., routes) ->
     unless routes.length then routes = 'routes.yml'
@@ -33,4 +33,4 @@ exports.build = (paths..., routes) ->
     #console.log router.routes
     router.generate (err, bundle) ->
         console.log bundle
-        railgun.package bundle, destination
+        #railgun.package bundle, destination
