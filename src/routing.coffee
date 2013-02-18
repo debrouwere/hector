@@ -100,7 +100,8 @@ class exports.Route
 
             locals = 
                 meta: _.extend {}, contextFromGlobals, contextFromFilename, contextFromFile
-                body: set.body
+                # REGRESSION? -- used to be set.body; did I forget to update any references?
+                content: set.content
 
             #data[name] = locals
 
