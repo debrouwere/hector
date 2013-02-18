@@ -1,6 +1,24 @@
 defaults:
     language: 'en'
 
+# Example of functionality I want in Hector, don't really need this
+# globals = like a route, but doesn't generate pages and is instead
+# available as context to any route. Also, as it is for routes, 
+# context is optional. Either because you don't need it or because
+# your plugin actually acts as a generator (making Hector much more
+# flexible in what kind of data it'll ingest)
+globals:
+    persons:
+        context: 'bios/{name}'
+        pipes:
+            - make-things-pluggable.js
+    # metadata fields to grab (so we have all unique values)
+    # useful e.g. for dynamic menus or for feeds
+    facets:
+        context: '{layout}/{year}-{month}-{day}-{permalink}'
+        pipes:
+            - get-unique-values.js
+
 routes:
     posts:
         route: '{year}/{month}/{day}/{permalink}'
