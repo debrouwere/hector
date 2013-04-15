@@ -1,10 +1,11 @@
 context = require 'espy'
 tilt = require 'tilt'
-railgun = require 'railgun'
+weaponize = require 'weaponize'
 _ = require 'underscore'
 fs = require 'fs'
 fs.path = require 'path'
 yaml = require 'js-yaml'
+colors = require 'colors'
 routing = exports.routing = require './routing'
 
 exports.build = (paths..., routes) ->
@@ -30,7 +31,16 @@ exports.build = (paths..., routes) ->
 
     settings = require routes
     router = new routing.Router settings.routes, settings.defaults, source
-    #console.log router.routes
-    router.generate (err, bundle) ->
-        console.log bundle
-        #railgun.package bundle, destination
+    
+    router.load (err) ->
+        if err
+            console.log "- could not load data".red
+            console.log err.message
+            return
+
+        router.generate (err, buffer) ->
+            if err
+                console.log "- could not process #{err.path}".red
+                console.log err.message
+            else
+                weaponize.package buffer, './build'

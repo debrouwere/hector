@@ -14,11 +14,12 @@
     "espy": "0.x",
     "glob": "3.x",
     "js-yaml": "1.x",
-    "railgun": "0.x",
+    "weaponize": "0.x",
     "tilt": "0.x",
     "underscore": "1.x",
     "wrench": "1.x",
-    "yaml": "0.x"
+    "yaml": "0.x",
+    "colors": "0.6.x"
   },
   "devDependencies": {},
   "scripts": {

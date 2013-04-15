@@ -41,6 +41,10 @@ Or maybe --filter and --exclude make more sense
 
 --filter posts recent --exclude pages     => render every route except pages, and only rerender recent posts
 
+
+** double pony would be if Hector could check for a Git repo and take these actions based
+   on commit messages, even something as simple as looking for the words "full rebuild"
+   and when it finds them doing a force rebuild.
 ----------
 
 DRAUGHTSMAN INTEGRATION

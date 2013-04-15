@@ -1,7 +1,5 @@
-//extends base
-html
-    head
-    body
-        h1= meta.title
-        h2 Static page
-        != body
+extends base
+block content
+    h1= meta.title
+    h2 Static page
+    != content

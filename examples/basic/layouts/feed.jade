@@ -1,0 +1,15 @@
+doctype xml
+feed(xmlns='http://www.w3.org/2005/Atom')
+title= meta.title
+link(href='http://example.org/feed.atom', rel='self')
+link(href='http://example.org/')
+id http://example.org/
+author
+    name Stijn Debrouwere
+    email stijn@example.org
+- each post in data
+    entry
+        title= post.title
+        link(href='http://example.org#{post.permalink}')
+        updated= post.date
+        content(type='html')= post.content

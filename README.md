@@ -7,7 +7,7 @@ Static sites are fast, secure, don't crash under load, are easy to deploy and ch
 * Support for many different templating and markup languages.
 * Use any markup language as well as YAML, CSV and JSON content with whatever directory layout you like. See [Tilt.js] for a list of currently supported formats.
 * Preprocess anything that compiles into CSS or JavaScript (like [LESS](http://lesscss.org) or [CoffeeScript](http://coffeescript.org)) and automatically optimize scripts, styles and HTML.
-* An easy switch from Jekyll.
+* An relatively straightforward switch from Jekyll.
 * A full-featured plugin system. Hook into any part of Hector's data gathering and rendering process.
 
 ## Get started
@@ -167,6 +167,17 @@ If a variable is present in a context set, it'll be used instead of the default.
 * layout
 * template functions
 * pipes: parsers/mungers/plugins/generators (a pipe that doesn't receive any context)/processors/whatever
+
+### Partial rendering
+
+* only rerender certain routes (specify an information source and 
+  we'll find all applicable routes, or pass a route and we'll
+  rerender that route and all others with the same information source, 
+  e.g. detail and list routes for your posts)
+* partial rendering: only render files that are newer than the last build
+* advanced partial rerendering through custom functions (we pass you 
+  a list of what we want to render, you give us back a list of
+  files we actually should render)
 
 ## How to prototype your site
 

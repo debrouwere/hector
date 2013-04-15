@@ -21,18 +21,20 @@ globals:
 
 routes:
     posts:
-        route: '{year}/{month}/{day}/{permalink}'
+        route: '{year}/{month}/{day}/{permalink}/'
         layout: '{layout}'
         context: 'posts/{year}-{month}-{day}-{permalink}'
         defaults:
             layout: 'blogpost'
     pages:
-        route: '{permalink}'
+        route: '{permalink}/'
         layout: '{layout}'
         context: 'pages/{permalink}'
         defaults:
             layout: 'page'
     feed:
-        route: 'feed.xml'
+        route: 'feed.atom'
         layout: 'feed'
         context: 'posts/{year}/{month}-{day}-{permalink}'
+        defaults:
+            title: 'The feed for example.org'

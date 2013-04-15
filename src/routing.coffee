@@ -1,151 +1,119 @@
-espy = require 'espy'
-tilt = require 'tilt'
-railgun = require 'railgun'
-_ = require 'underscore'
 fs = require 'fs'
 fs.path = require 'path'
-fs.glob = require 'glob'
 async = require 'async'
+_ = require 'underscore'
+colors = require 'colors'
+espy = require 'espy'
+weaponize = require 'weaponize'
+utils = require './utils'
+{Format} = require './format'
 
-class exports.Format
-    constructor: (@raw, @defaults = {}) ->
-        # is this a fully-specified path or a template with placeholders?
-        if (@raw.indexOf '{') > -1
-            @isTemplate = yes
-        else
-            @isTemplate = no
 
-    # analog to matching a regular expression against a string
-    match: (str) ->
-        keys = @raw.match /\{([^\}]+)\}/g
-        keys = keys.map (match) ->
-            match.slice 1, -1
-        keys.push 'extension'
+class Page
+    constructor: (@name, @data, @relatedData, @route) ->
+        @locals = @getLocals()
+        layoutName = new Format(@locals.meta.layout).fill(@locals.meta)
+        @layout = @locals.meta.layout = @findLayout layoutName
+        @path = @route.route.fill @locals.meta
 
-        regex = @raw.replace /\{([^\}]+)\}/g, '(.+?)'
-        regex = new RegExp "#{regex}\.([^.]+)$"
-        
-        matchObj = regex.exec(str)
-        return null unless matchObj
+        # when a route specifies a directory (e.g. `pages/my-page/`)
+        # write to index.html inside of that directory
+        if @path[@path.length-1] is '/'
+            @path += 'index.html'
 
-        matches = matchObj[1..]
-        context = @defaults
-        for key in keys
-            context[key] = matches.shift()
+    getLocals: ->
+        context =
+            # TODO
+            globals: _.extend {}, @route.defaults
+            filename: []
+            file: @data.meta
 
-        context
+        # routes that don't have any placeholders by definition
+        # can't contain any context
+        if @route.route.isTemplate
+            context.filename = @route.context.match @data.meta.origin.filename
 
-    toTemplate: ->
-        (context) =>
-            str = @raw
-            for key, value of context
-                str = str.replace "{#{key}}", value, 'g'
-            str
-    
-    # fill the placeholders in our formatted string with 
-    # the context variables
-    fill: (context) ->
-        @toTemplate()(context)
+        meta = _.extend {}, (_.values context)...
+        data = @relatedData
+        content = @data.content
+        if not meta.layout then meta.layout = @route.specification.layout
 
-class exports.Route
-    constructor: (spec, @router) ->
+        {meta, data, content}
+
+    findLayout: (templateName) ->
+        path = fs.path.join @route.router.fileRoot, 'layouts', templateName
+        pattern = path + '.*'
+        utils.findLayout pattern
+
+    render: (callback) ->
+        @layout @locals, (err, output) =>
+            console.log "✓ #{@path}".grey
+            @route.destination.add @path, output
+            callback err
+
+
+class Route
+    constructor: (@name, spec, @router) ->
+        @specification = spec
         @defaults = _.extend {}, @router.defaults, spec.defaults
-        @route = new exports.Format spec.route, @defaults
-        @layout = new exports.Format spec.layout, @defaults
-        @context = new exports.Format spec.context, @defaults
+        @route = new Format spec.route, @defaults
+        @layout = new Format spec.layout, @defaults
+        @context = new Format spec.context, @defaults
         @root = @getBaseDir @context.raw
 
-    # this looks a bit strange, but what it does is, provided with a path to context like 
-    # `posts/{year}/{month}-{day}-{title}`, figure out that we want to start looking in
-    # `posts`.
+    # this looks a bit strange, but what it does is, provided with a path
+    # like `posts/{year}/{month}-{day}-{title}`, figure out that we want
+    # to start looking for context in `posts`.
     getBaseDir: (str) ->
-        end = str.indexOf('{')
+        end = str.indexOf '{'
         format = str.slice 0, end
         format.split('/').slice(0, -1).join('/')
 
-    getData: (callback) ->
-        # TODO: should really be (errors, context) =>
-        espy.findFilesFor @router.fileRoot, @root, (files) ->
-            espy.getContext files, (errors, context) ->
-                callback errors, context
+    load: (callback) ->
+        espy.findFilesFor @router.fileRoot, @root, (files) =>
+            espy.getContext files, (err, context) =>
+                @data = context
+                callback err, @data
 
-    findLayout: (templateName) ->
-        path = fs.path.join @router.fileRoot, 'layouts', templateName
-        pattern = path + '.*'
-        # we need to glob for this basepath, and among the options
-        # (if any) we need to figure out if there are any with extensions
-        # for template languages we can deal with
-        matches = fs.glob.sync pattern
-        for match in matches
-            file = new tilt.File path: match
-            handler = tilt.findHandler file
-            # it's not enough to have a handler available, 
-            # the file we're dealing with should be a template language and 
-            # not e.g. a CSS preprocessor
-            if handler? and handler.mime.output is 'text/html'
-                return (context, callback) ->
-                    file.load ->
-                        handler.compiler file, context, callback
+    generate: (@destination, callback) ->
+        console.log "Generating #{@name}".bold, "\t#{@context.raw} -> #{@route.raw}"
 
-    generate: (bundle, callback) ->
-        # TODO
-        contextFromGlobals = _.extend {}, @defaults
+        # when dealing with a route like `posts/{permalink}`, render once 
+        # for every context set, but when dealing with a route like `feed`, 
+        # only generate once and pass all the context in one bundle
+        if @route.isTemplate
+            render = ([name, dataset], done) =>
+                page = new Page name, dataset, @router.data, this
+                page.render done
 
-        gen = (item, done) =>
-            [name, set] = item
-
-            relpath = set.meta.origin.filename.replace @router.fileRoot + '/', ''
-            contextFromFilename = @context.match set.meta.origin.filename
-            contextFromFile = set.meta
-
-            locals = 
-                meta: _.extend {}, contextFromGlobals, contextFromFilename, contextFromFile
-                # REGRESSION? -- used to be set.body; did I forget to update any references?
-                content: set.content
-
-            #data[name] = locals
-
-            # locals.meta.layout can be variable, so we want to run
-            # it through a formatter first
-            layoutName = new exports.Format(locals.meta.layout).fill(locals.meta)
-            layout = @findLayout layoutName
-            path = @route.fill(locals.meta) + '/index.html'
+            async.forEach (_.pairs @data), render, (err) ->
+                callback err
+        else
+            (new Page null, @data, @router.data, this).render callback
             
-            # TESTING
-            # abspath here is sort of silly, since the bundle will cut it right 
-            # off again -- but we can worry about the fine details of the interop
-            # later
-            abspath = fs.path.join bundle.root, path
 
-            layout locals, (err, output) ->
-                bundle.push abspath, {content: output, compilerType: 'noop'}
-                done err
-
-        @getData (err, data) =>
-            # render once for every context set
-            async.forEach (_.pairs data), gen, (err) ->
-                callback err, bundle
-            
-            ###
-            # I wonder whether this is relevant?
-            # Doesn't everything just work the same for individual files?
-            if @route.isTemplate
-                'see above'
-            else
-                # render once
-                'todo'
-            ###
-
-class exports.Router
+class Router
     constructor: (@routes, @defaults, @fileRoot) ->
-        (@routes[name] = new exports.Route spec, @) for name, spec of @routes
+        (@routes[name] = new Route name, spec, @) for name, spec of @routes
+
+    load: (callback) ->
+        # preload all data for all routes with `espy`
+        # so we can make it available under `data.<route>`
+        tasks = ([name, (_.bind route.load, route)] for name, route of @routes)
+        async.parallel (_.object tasks), (err, @data) =>
+            callback err
 
     generate: (callback) ->
-        bundle = new railgun.Bundle @fileRoot + 'index'
-        console.log 'root', bundle.root
+        buffer = new weaponize.Buffer()
 
-        # TEMPORARY -- I don't want to test all routes just yet, 
-        # so I'm picking them manually
-        @routes.posts.generate bundle, =>
-            @routes.pages.generate bundle, =>
-                callback null, bundle
+        generateRoute = (route, done) -> route.generate buffer, done
+
+        routes = (_.values @routes)
+        async.each routes, generateRoute, (errors) ->
+            callback errors, buffer
+
+
+exports.Format = Format
+exports.Page = Page
+exports.Route = Route
+exports.Router = Router
