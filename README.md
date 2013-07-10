@@ -84,7 +84,7 @@ You can pick any template language you like. Our recommendation would be [Jade](
             title= meta.title
         body
             h1= meta.title
-            != body
+            != content
 
 ### Static assets
 
@@ -112,11 +112,11 @@ Data sources are the files an individual route will use to render pages.
 
 Context are the variables that get passed to a template to render it, and that also often determine the path and name of the rendered file. You might know them as _locals_ or _data_ or _template variables_.
 
-In most web frameworks, context mostly comes from a database. In Hector, context comes from the file path, a file's content (available as `body`) or its front matter (available as `meta`), any defaults or global variables you specify.
+In most web frameworks, context mostly comes from a database. In Hector, context comes from the file path, a file's content (available as `content`) or its front matter (available as `meta`), any defaults or global variables you specify.
 
 Hector also uses context to fill in placeholders in a route or a layout.
 
-In addition to the context Hector passes on from the individual file that is being rendered, it will also include the context from all other files in the data source for a route. You'll find these under `data`. Hector also passes in a couple of template helpers. These are under `helpers`.
+In addition to the context Hector passes on from the individual file that is being rendered (available under `context`, but also expanded out into `content` and `meta`), it will also include the context from all other files in the data source for a route. You'll find these under `data`. Hector also passes in a couple of template helpers. These are under `helpers`.
 
     context set
         file path
@@ -138,7 +138,7 @@ The main use for context is filling out the placeholders in your template files,
 
 If a route contains placeholders, like for example `{year}/{permalink}`, Hector will loop through all context sets, and render a file for each. Routes almost always have placeholders, so you can do things like render however many blogposts using the same route, rather than having to create a separate route for each individual file.
 
-If your route doesn't contain any placeholders and looks like, for example, `feed.xml`, Hector just render the template once. Any templates can access all the different context sets from a data source through the `data` variable. This is useful for generating feeds, archives and the like, where you put many different pieces of content on a single page, or it can be useful for generating prev/next links on individual blogposts.
+If your route doesn't contain any placeholders and looks like, for example, `feed.xml`, Hector just render the template once. Any templates can access all the different context sets from a data source through the `data` variable. If you specify a context in your route, which is optional for routes without placeholders, you can access that data through `context`. This is useful for generating feeds, archives and the like, where you put many different pieces of content on a single page, or it can be useful for generating prev/next links on individual blogposts.
 
 Advanced users can use pipes to add, combine or remove context programmatically before it gets passed to the rendering engine. For example, if you have separate `{page}-side` and `{page}-main` files in a data source, you can modify the rendering pipeline. See "How to use pipes" below.)
 

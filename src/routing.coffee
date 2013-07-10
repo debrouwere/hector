@@ -9,53 +9,27 @@ utils = require './utils'
 {Format} = require './format'
 
 
-class Page
-    constructor: (@name, @data, @relatedData, @route) ->
-        @locals = @getLocals()
-        layoutName = new Format(@locals.meta.layout).fill(@locals.meta)
-        @layout = @locals.meta.layout = @findLayout layoutName
-        @path = @route.route.fill @locals.meta
-
-        # when a route specifies a directory (e.g. `pages/my-page/`)
-        # write to index.html inside of that directory
-        if @path[@path.length-1] is '/'
-            @path += 'index.html'
-
-    getLocals: ->
-        context =
-            # TODO
-            globals: _.extend {}, @route.defaults
-            filename: []
-            file: @data.meta
-
-        # routes that don't have any placeholders by definition
-        # can't contain any context
-        if @route.route.isTemplate
-            context.filename = @route.context.match @data.meta.origin.filename
-
-        meta = _.extend {}, (_.values context)...
-        data = @relatedData
-        content = @data.content
-        if not meta.layout then meta.layout = @route.specification.layout
-
-        {meta, data, content}
-
-    findLayout: (templateName) ->
-        path = fs.path.join @route.router.fileRoot, 'layouts', templateName
-        pattern = path + '.*'
-        utils.findLayout pattern
-
-    render: (callback) ->
-        @layout @locals, (err, output) =>
-            console.log "✓ #{@path}".grey
-            @route.destination.add @path, output
-            callback err
+requireLocal = (name) ->
+        name = name.replace '.js', ''
+        path = fs.path.join 'pipes', name
+        localPath = './' + path
+        require localPath
 
 
 class Route
     constructor: (@name, spec, @router) ->
+        load = (name) =>
+            pipe = requireLocal name
+            _.bind pipe, this            
+
         @specification = spec
         @defaults = _.extend {}, @router.defaults, spec.defaults
+        @pipes = (spec.pipes or ['gather-context']).map load
+        @output = (spec.output or ['add-helpers', 'render-from-template']).map load
+
+        # REFACTOR: rename to `paths`, an array w/ fallbacks
+        # (and turn into array if we get a plain string from spec.route)
+        # (perhaps change naming to spec.path also)
         @route = new Format spec.route, @defaults
         @layout = new Format spec.layout, @defaults
         @context = new Format spec.context, @defaults
@@ -70,43 +44,56 @@ class Route
         format.split('/').slice(0, -1).join('/')
 
     load: (callback) ->
-        espy.findFilesFor @router.fileRoot, @root, (files) =>
-            espy.getContext files, (err, context) =>
-                @data = context
-                callback err, @data
+        save = (err, @data) => callback err, @data
+        async.waterfall @pipes, save
 
     generate: (@destination, callback) ->
         console.log "Generating #{@name}".bold, "\t#{@context.raw} -> #{@route.raw}"
 
-        # when dealing with a route like `posts/{permalink}`, render once 
-        # for every context set, but when dealing with a route like `feed`, 
-        # only generate once and pass all the context in one bundle
-        if @route.isTemplate
-            render = ([name, dataset], done) =>
-                page = new Page name, dataset, @router.data, this
-                page.render done
+        process = (set, done) =>
+            console.log 'processing set', set.hector
+            seed = utils.functional.seed set
+            async.waterfall [seed, @output...], done
 
-            async.forEach (_.pairs @data), render, (err) ->
-                callback err
-        else
-            (new Page null, @data, @router.data, this).render callback
-            
+        async.each @data, process, callback
+
+    # UNTESTED / DEPENDS ON OTHER REFACTORS / HERE AS INSPIRATION / A STUB
+    fill: (context) ->
+        for path in @path
+            try
+                return path.fill context
+            catch error
+                if error instanceof ReferenceError
+                    continue
+                else
+                    throw error
+            return null
 
 class Router
-    constructor: (@routes, @defaults, @fileRoot) ->
-        (@routes[name] = new Route name, spec, @) for name, spec of @routes
+    constructor: (@options, source) ->
+        # we normally expect content, layouts and such to be in the same
+        # location as the routes.yml, but these defaults can be overridden
+        # (and in fact it's recommended to do so)
+        absolutize = (path) -> fs.path.resolve source, path        
+        @root = 
+            app: absolutize (@options.settings.root?.app or source)
+            context: absolutize (@options.settings.root?.context or source)
+
+        @routes = {}
+        (@routes[name] = new Route name, spec, @) for name, spec of @options.routes
 
     load: (callback) ->
         # preload all data for all routes with `espy`
         # so we can make it available under `data.<route>`
         tasks = ([name, (_.bind route.load, route)] for name, route of @routes)
-        async.parallel (_.object tasks), (err, @data) =>
-            callback err
+        save = (err, @data) => callback err, @data
+        async.parallel (_.object tasks), save
 
     generate: (callback) ->
         buffer = new weaponize.Buffer()
 
-        generateRoute = (route, done) -> route.generate buffer, done
+        generateRoute = (route, done) ->
+            route.generate buffer, done
 
         routes = (_.values @routes)
         async.each routes, generateRoute, (errors) ->
@@ -114,6 +101,5 @@ class Router
 
 
 exports.Format = Format
-exports.Page = Page
 exports.Route = Route
 exports.Router = Router

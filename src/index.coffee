@@ -11,8 +11,6 @@ routing = exports.routing = require './routing'
 exports.build = (paths..., routes) ->
     unless routes.length then routes = 'routes.yml'
 
-    cwd = process.cwd()
-
     switch paths.length
         when 2
             [source, destination] = paths
@@ -25,12 +23,14 @@ exports.build = (paths..., routes) ->
         else
             throw new Error 'Wrong arguments'
 
+    cwd = process.cwd()
     source = fs.path.join cwd, source
     destination = fs.path.join cwd, destination
-    routes = fs.path.join source, routes
+    routesPath = fs.path.join source, routes
 
-    settings = require routes
-    router = new routing.Router settings.routes, settings.defaults, source
+    routes = require routesPath
+    routes.settings ?= {}
+    router = new routing.Router routes, source
     
     router.load (err) ->
         if err

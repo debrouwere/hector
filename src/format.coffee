@@ -1,3 +1,5 @@
+_ = require 'underscore'
+
 class exports.Format
     constructor: (@raw, @defaults = {}) ->
         # checks whether this is a fully-specified path
@@ -21,7 +23,7 @@ class exports.Format
         return null unless matchObj
 
         matches = matchObj[1..]
-        context = @defaults
+        context = _.clone @defaults
         for key in keys
             context[key] = matches.shift()
 
@@ -36,5 +38,6 @@ class exports.Format
     
     # fill the placeholders in our formatted string with 
     # the context variables
+    # TODO: throw an error if we can't fill every placeholder
     fill: (context) ->
         @toTemplate()(context)
