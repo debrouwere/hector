@@ -7,9 +7,10 @@ id http://example.org/
 author
     name Stijn Debrouwere
     email stijn@example.org
-- each post in data
+- each post in context
     entry
-        title= post.title
-        link(href='http://example.org#{post.permalink}')
-        updated= post.date
+        title= post.meta.title
+        // #{post.hector.permalink}
+        link(href='http://example.org/')
+        updated= post.meta.date
         content(type='html')= post.content

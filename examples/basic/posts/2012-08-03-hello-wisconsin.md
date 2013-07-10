@@ -2,4 +2,4 @@
 title: Hello, Wisconsin!
 ---
 
-A dummy blogpost.
+A different blogpost.

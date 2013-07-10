@@ -1,6 +1,10 @@
 defaults:
     language: 'en'
 
+#settings:
+#    root:
+#        context: '..'
+
 # Example of functionality I want in Hector, don't really need this
 # globals = like a route, but doesn't generate pages and is instead
 # available as context to any route. Also, as it is for routes, 
@@ -18,12 +22,18 @@ globals:
         context: '{layout}/{year}-{month}-{day}-{permalink}'
         pipes:
             - get-unique-values.js
+        output: 
+            - render
 
 routes:
     posts:
         route: '{year}/{month}/{day}/{permalink}/'
         layout: '{layout}'
         context: 'posts/{year}-{month}-{day}-{permalink}'
+        # if `canonical` is specified, then we'll log this context somewhere
+        # and whenever we use it again, we'll add the canonical URL to the
+        # Hector metadata. (Useful for feeds etc.)
+        canonical: yes
         defaults:
             layout: 'blogpost'
     pages:
@@ -35,6 +45,6 @@ routes:
     feed:
         route: 'feed.atom'
         layout: 'feed'
-        context: 'posts/{year}/{month}-{day}-{permalink}'
+        context: 'posts/{year}-{month}-{day}-{permalink}'
         defaults:
             title: 'The feed for example.org'
