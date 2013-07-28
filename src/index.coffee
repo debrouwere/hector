@@ -6,9 +6,12 @@ fs = require 'fs'
 fs.path = require 'path'
 yaml = require 'js-yaml'
 colors = require 'colors'
+async = require 'async'
+express = require 'express'
 routing = exports.routing = require './routing'
 
-exports.build = (paths..., routes) ->
+
+exports._build = (paths..., routes, callback=->) ->
     unless routes.length then routes = 'routes.yml'
 
     switch paths.length
@@ -32,15 +35,35 @@ exports.build = (paths..., routes) ->
     routes.settings ?= {}
     router = new routing.Router routes, source
     
-    router.load (err) ->
+    load = (done) -> router.load done
+    generate = (data, done) -> router.generate done
+    packageBuffer = (buffer, done) -> weaponize.package buffer, './build', done
+
+    async.waterfall [load, generate, packageBuffer], (err) ->
+        console.log 'built / waterfall'
+
+        # TODO: vary user-facing error message
+        # based on the async error
         if err
             console.log "- could not load data".red
             console.log err.message
-            return
+    
+        if err
+            console.log "- could not process #{err.path}".red
+            console.log err.message
 
-        router.generate (err, buffer) ->
-            if err
-                console.log "- could not process #{err.path}".red
-                console.log err.message
-            else
-                weaponize.package buffer, './build'
+        callback err
+
+
+exports._serve = ->
+    exports._build arguments..., (err) ->
+        console.log 'built!'
+        app = express()
+        app.use express.static './build'
+        app.listen 3400
+        console.log 'Listening on 3400'
+
+
+# testing
+exports.build = ->
+    exports._serve arguments...

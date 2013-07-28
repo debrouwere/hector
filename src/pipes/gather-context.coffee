@@ -2,6 +2,7 @@ _ = require 'underscore'
 espy = require 'espy'
 async = require 'async'
 require 'colors'
+utils = require '../utils'
 
 steps = 
     findCandidates: (callback) ->
@@ -12,7 +13,6 @@ steps =
         espy.findFilesFor @router.root.context, @root, recursive, callback
 
     filterCandidates: (candidates, callback) ->
-        console.log "#{@name}".green    
         files = candidates.filter (file) =>
             @context.match (file.replace @router.root.context, '')[1..]
         callback null, files
@@ -41,14 +41,17 @@ steps =
         {layout, @defaults, path, permalink, root: @router.root}   
 
     weaveContext: (sets, callback) ->
-        console.log "#{@name}".red
-
         getSetMetadata = _.bind steps.getSetMetadata, this
         getPageMetadata = _.bind steps.getPageMetadata, this
 
         for name, set of sets
-            set.hector = getSetMetadata set.meta
-            _.extend set.meta, set.hector.context
+            try
+                set.hector = getSetMetadata set.meta
+            catch error
+                console.log 'error w/ set', set
+                throw new Error()
+            
+            set.meta = _.extend set.hector.context, set.meta
 
             if @route.isTemplate
                 pageMeta = getPageMetadata set.meta
@@ -58,20 +61,26 @@ steps =
             sets = _.values sets
         else
             meta = getPageMetadata {}
-            sets = [{context: sets, hector: meta, meta: {}}]
+            sets = [{context: sets, hector: meta, meta: meta.defaults}]
 
         callback null, sets
 
 module.exports = (callback) ->
-    procedure = [
-        steps.findCandidates
-        steps.filterCandidates
-        steps.getFileContext
-        steps.weaveContext
+    if @context
+        procedure = [
+            steps.findCandidates
+            steps.filterCandidates
+            steps.getFileContext
+            steps.weaveContext
+            ]
+    else
+        seed = utils.functional.seed []
+        procedure = [
+            seed
+            steps.weaveContext
         ]
 
     procedure = procedure.map (step) => _.bind step, this
-
     async.waterfall procedure, (err, sets) =>
         console.log "Found #{sets.length} context files for route #{@name}"
         callback err, sets

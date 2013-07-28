@@ -8,14 +8,17 @@ findLayout = (templateName, root) ->
         pattern = path + '.*'
         templatePath = utils.template.find pattern
 
+        return null unless templatePath
+
         (context, callback) ->
             utils.template.compile templatePath, context, callback
 
 module.exports = (locals, callback) ->
-    console.log 'being asked to render context for', locals
-    
-    layout = findLayout locals.hector.layout, locals.hector.root.app
     _.extend locals, {data: @router.data}
+    layout = findLayout locals.hector.layout, locals.hector.root.app
+    
+    if not layout
+        return console.log "✗ Couldn't find a layout named #{locals.hector.layout}".red
 
     layout locals, (err, output) =>
         console.log "✓ #{locals.hector.path}".grey

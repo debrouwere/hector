@@ -26,6 +26,13 @@ globals:
             - render
 
 routes:
+    assets:
+        route: 'assets'
+        context: 'assets'
+        pipes:
+            - list-files
+        output:
+            - copy-assets
     posts:
         route: '{year}/{month}/{day}/{permalink}/'
         layout: '{layout}'

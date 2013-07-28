@@ -8,18 +8,24 @@ weaponize = require 'weaponize'
 utils = require './utils'
 {Format} = require './format'
 
+requireLocal = (name, root) ->
+    name = name
+        .replace('.js', '')
+        .replace('.coffee', '')
 
-requireLocal = (name) ->
-        name = name.replace '.js', ''
+    if name[0] is '/'
+        localPath = name
+    else if name[0] is '.'
+        localPath = fs.path.join root, name
+    else
         path = fs.path.join 'pipes', name
         localPath = './' + path
-        require localPath
-
+    require localPath
 
 class Route
     constructor: (@name, spec, @router) ->
         load = (name) =>
-            pipe = requireLocal name
+            pipe = requireLocal name, @router.root.app
             _.bind pipe, this            
 
         @specification = spec
@@ -30,28 +36,35 @@ class Route
         # REFACTOR: rename to `paths`, an array w/ fallbacks
         # (and turn into array if we get a plain string from spec.route)
         # (perhaps change naming to spec.path also)
-        @route = new Format spec.route, @defaults
-        @layout = new Format spec.layout, @defaults
-        @context = new Format spec.context, @defaults
-        @root = @getBaseDir @context.raw
+        if 'route' of spec
+            @route = new Format spec.route, @defaults
+        if 'layout' of spec
+            @layout = new Format spec.layout, @defaults
+        if 'context' of spec
+            @context = new Format spec.context, @defaults
+            @root = @getBaseDir @context.raw
 
     # this looks a bit strange, but what it does is, provided with a path
     # like `posts/{year}/{month}-{day}-{title}`, figure out that we want
     # to start looking for context in `posts`.
     getBaseDir: (str) ->
         end = str.indexOf '{'
-        format = str.slice 0, end
-        format.split('/').slice(0, -1).join('/')
+        if end is -1
+            str
+        else
+            format = str.slice 0, end
+            format.split('/').slice(0, -1).join('/')
 
     load: (callback) ->
         save = (err, @data) => callback err, @data
         async.waterfall @pipes, save
 
     generate: (@destination, callback) ->
-        console.log "Generating #{@name}".bold, "\t#{@context.raw} -> #{@route.raw}"
+        context = @context?.raw or ''
+        context += ' '
+        console.log "Generating #{@name}".bold, "\t#{context}-> #{@route.raw}"
 
         process = (set, done) =>
-            console.log 'processing set', set.hector
             seed = utils.functional.seed set
             async.waterfall [seed, @output...], done
 
@@ -78,6 +91,7 @@ class Router
         @root = 
             app: absolutize (@options.settings.root?.app or source)
             context: absolutize (@options.settings.root?.context or source)
+            assets: absolutize (@options.settings.root?.assets or source)
 
         @routes = {}
         (@routes[name] = new Route name, spec, @) for name, spec of @options.routes

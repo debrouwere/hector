@@ -1,5 +1,8 @@
 _ = require 'underscore'
 
+filters =
+    'd': '([0-9]+)'
+
 class exports.Format
     constructor: (@raw, @defaults = {}) ->
         # checks whether this is a fully-specified path
@@ -16,7 +19,12 @@ class exports.Format
             match.slice 1, -1
         keys.push 'extension'
 
-        regex = @raw.replace /\{([^\}]+)\}/g, '(.+?)'
+        regex = @raw
+        for key in keys
+            [name, filter] = key.split ':'
+            filter = filters[filter] or '(.+?)'
+            regex = regex.replace /\{([^\}]+)\}/, filter
+        
         regex = new RegExp "#{regex}\.([^.]+)$"
         
         matchObj = regex.exec(str)
@@ -25,7 +33,8 @@ class exports.Format
         matches = matchObj[1..]
         context = _.clone @defaults
         for key in keys
-            context[key] = matches.shift()
+            [name, filter] = key.split ':'
+            context[name] = matches.shift()
 
         context
 
@@ -33,7 +42,8 @@ class exports.Format
         (context) =>
             str = @raw
             for key, value of context
-                str = str.replace "{#{key}}", value, 'g'
+                typedKey = (new RegExp "{#{key}(\:.)?}")
+                str = str.replace typedKey, value, 'g'
             str
     
     # fill the placeholders in our formatted string with 
