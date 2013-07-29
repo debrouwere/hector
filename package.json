@@ -1,6 +1,6 @@
 {
   "name": "hector",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A static-site generator that works like an MVC framework (routes and data sources).",
   "main": "lib/index.js",
   "bin": "./bin/hector",
@@ -19,7 +19,8 @@
     "underscore": "1.x",
     "wrench": "1.x",
     "yaml": "0.x",
-    "colors": "0.6.x"
+    "colors": "0.6.x",
+    "express": "3.x"
   },
   "devDependencies": {},
   "scripts": {
