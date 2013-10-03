@@ -42,6 +42,12 @@ Or maybe --filter and --exclude make more sense
 --filter posts recent --exclude pages     => render every route except pages, and only rerender recent posts
 
 
+We could look at other routes that share a context, and automatically regenerate these dependencies too. We could also check generation date, and check which context base paths have new files. Then the app can decide which routes to regen automatically (and be right most of the time).
+
+True partial rebuilds (where you can say "hey, only this file is new so only this needs to be rendered") would be pretty awesome, but again, it would only work if you're not making much/any use of the `data` global context and things like that.
+
+Also, N=1 output should probably always be regenerated, because these files very often use `data` in lieu of context.
+
 ** double pony would be if Hector could check for a Git repo and take these actions based
    on commit messages, even something as simple as looking for the words "full rebuild"
    and when it finds them doing a force rebuild.
