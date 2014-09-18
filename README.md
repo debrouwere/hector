@@ -4,7 +4,7 @@ Static sites are fast, secure, don't crash under load, are easy to deploy and ch
 
 ## Status
 
-Hector is not stable software. It is not actively maintained anymore. Take a look at the [gather](https://github.com/stdbrouw/gather) and [render](https://github.com/stdbrouw/render) command-line interfaces and node.js modules. Gather and render are a newer take on the philosophy behind Hector: static site generation as a bunch of data transformations rather than something you do with specialized blogging software.
+Hector is not stable software. It is **not actively maintained** anymore. Take a look at the [gather](https://github.com/stdbrouw/gather) and [render](https://github.com/stdbrouw/render) command-line interfaces and node.js modules. Gather and render are a newer take on the philosophy behind Hector: static site generation as a bunch of data transformations rather than something you do with specialized blogging software.
 
 ## Features
 
