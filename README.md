@@ -2,6 +2,10 @@ Hector is an MIT-licensed static site generator. It takes your content and spits
 
 Static sites are fast, secure, don't crash under load, are easy to deploy and cheap to host, and you can still add in any dynamic bits you might need through JavaScript or server-side includes.
 
+## Status
+
+Hector is not stable software. It is not actively maintained anymore. Take a look at the [gather](https://github.com/stdbrouw/gather) and [render](https://github.com/stdbrouw/render) command-line interfaces and node.js modules. Gather and render are a newer take on the philosophy behind Hector: static site generation as a bunch of data transformations rather than something you do with specialized blogging software.
+
 ## Features
 
 * Support for many different templating and markup languages.
